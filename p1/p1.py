@@ -51,16 +51,39 @@ gradient(X, Y, 0.01, 0, 0)
 fig = plt.figure()
 ax = fig.gca(projection = '3d') #Axes3D(fig)
 data = make_data([-10, 10], [-1, 4], X, Y)
-surf=ax.plot_surface(data[0], data[1], data[2], cmap=cm.coolwarm, linewidth=0,antialiased = False)
-
+surf=ax.plot_surface(data[0], data[1], data[2], cmap=cm.coolwarm, linewidth=0,antialiased = False)  
 fig.colorbar(surf,shrink=0.5, aspect=5)
 #primer parametro rotar en eje x, segundo rota en eje z 
 ax.view_init(25,225)
 
 # contour
-# fig2 = plt.figure()
-
-
-# fig2 = plt.contour(data[0], data[1], data[2], np.logspace(-2, 3, 20))
+fig2 = plt.figure()
+fig2 = plt.contour(data[0], data[1], data[2], np.logspace(-2, 3, 20))
 plt.show()
+
+
+#Implementacion vectorial del descenso de gradiente
+
+"""
+X:Matriz bidimensional de numpy de dimensiones (m,n)
+Y: matriz unidimensional de numpy de dimensiones (m,)
+Theta matriz unidimensional de numpy de dimensiones (n,)
+"""
+def gradiente(X, Y, Theta, alpha):
+    NuevaTheta = Theta
+    m = np.shape(X)[0]
+    n = np.shape(X)[1]
+    H = np.dot(X, Theta)
+    Aux = (H - Y)
+    for i in range(n):
+        Aux[i] = Aux * X[:, i]#toda la fila de la columna i
+        NuevaTheta[i] -= (alpha / m) * Aux[i].sum()
+    return NuevaTheta
+#def gradiente (X,Y,Theta,alpha)
+#m=np.shape(X)[0]
+#H=np.dot(X,Theta)
+#return Theta - (alpha/m) * np.dot(np.transpose(X),(H-Y))
+
+
+
 # %%
