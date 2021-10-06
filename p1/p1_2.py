@@ -14,8 +14,8 @@ def coste(X, Y, Theta):
 
 
 def ecuacionNormal(X, Y):
-    
-    return (np.linalg.inv(np.dot(np.transpose(X),X))) * np.transpose(X) * Y
+    Aux=(np.linalg.inv(np.dot(np.transpose(X),X)))
+    return  np.dot(np.dot(Aux, np.transpose(X)), Y)
 
 
 # def gradiente_for(X, Y, Theta, alpha):
@@ -35,7 +35,16 @@ def gradiente (X,Y,Theta, alpha):
     H=np.dot(X,Theta)
     return Theta - (alpha/m) * np.dot(np.transpose(X),(H-Y))
 
-def descenso_gradiente(X,Y,Theta):
+
+def descenso_gradiente(X,Y,Theta, alpha):
+    costes = np.zeros(1500)    
+    for a in range(1500):
+        Theta=gradiente(X,Y,Theta,alpha)
+        costes[a]=coste(X,Y,Theta)   
+    return Theta
+
+
+def descenso_gradiente_archivos(X,Y,Theta):
     alpha = [0.1,0.3,0.01,0.03, 0.001, 0.003]
     ThetaOG = Theta
     for i in alpha:
@@ -45,7 +54,7 @@ def descenso_gradiente(X,Y,Theta):
             Theta=gradiente(X,Y,Theta,i)
             costes[a]=coste(X,Y,Theta)
         plt.xlabel("Numero de iteraciones")
-        plt.ylabel(" theta")
+        plt.ylabel("Coste de theta")
         plt.plot(costes)
         plt.savefig("resultado{0}.png".format(i) )
         plt.clf() #limpiar
@@ -72,9 +81,20 @@ def main():
 
     np.hstack([np.ones([m,1]), X])
     Theta = np.zeros(np.shape(X)[1])
-    descenso_gradiente(X,Y,Theta)
 
-    ecuacionNormal(X,Y)
+    #descenso_gradiente_archivos(X,Y,Theta)#para los archivos
+    
+    #1650 pies cuadrado y 3 habitaciones
+    thetaGradiente=descenso_gradiente(X,Y,Theta,0.1)
+    valor=thetaGradiente[0]*1650 + thetaGradiente[1]*3
+    print(valor)
+
+    thetaNormal=ecuacionNormal(X,Y)
+    valor2=thetaNormal[0]*1650 + thetaNormal[1]*3
+    print(valor2)
+
+    print(valor - valor2)
+
 
 main()
 # %%
