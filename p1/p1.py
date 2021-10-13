@@ -6,6 +6,9 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from pandas.io.parsers import read_csv
 
+#Descenso de gradiente con un único parámetro de entrenamiento
+
+#calcula el coste
 def coste(X, Y, th_0, th_1):
     m = len(X)
     sum = 0
@@ -13,6 +16,7 @@ def coste(X, Y, th_0, th_1):
         sum += ((th_0 + th_1*X[i]) - Y[i])**2
     return sum / (2 * m)
 
+#
 def gradient(X, Y, alpha, th_0, th_1):
     m = len(X)
     for a in range(1500):
@@ -29,8 +33,12 @@ def gradient(X, Y, alpha, th_0, th_1):
     min_y = th_0 + th_1 * min_x
     max_Y = th_0 +th_1 * max_X
     plt.plot([min_x, max_X], [min_y, max_Y])
-    plt.savefig("resultado.pdf")
+    plt.ylabel("Ingresos en $10.000s")
+    plt.xlabel("Población de la ciudad en 10.000s")
+    plt.savefig("resultado.png")
 
+#dandole de theta0 y 1, devuelve el coste que conseguimos con ese rango de thetas (y su step = aplha)
+#sirve para hacer las graficas en 3D
 def make_data(t0_range, t1_range, X, Y):
     step = 0.1
     theta0 =np.arange(t0_range[0], t0_range[1],step)     
@@ -41,17 +49,6 @@ def make_data(t0_range, t1_range, X, Y):
     for ix, iy in np.ndindex(theta0.shape):
         Coste[ix,iy] = coste(X,Y, theta0[ix,iy], theta1[ix,iy])
     return [theta0,theta1, Coste]
-
-def normalize_mu_sigma(X, mu, sigma):
-    n = len(X[0])
-    for i in range(n):
-        mu[i] = np.mean(X, i)
-        sigma[i] = np.std(X, i)
-    np.shape(mu)
-    np.shape(sigma)
-    xNorm = X / (mu - sigma)
-    np.shape(xNorm)
-    return xNorm
 
 def main(): 
     valores = read_csv("ex1data1.csv", header=None).to_numpy()
@@ -67,34 +64,17 @@ def main():
     fig.colorbar(surf,shrink=0.5, aspect=5)
     #primer parametro rotar en eje x, segundo rota en eje z 
     ax.view_init(25,225)
+    plt.xlabel("Theta0")
+    plt.ylabel("Theta1")
+    plt.savefig("surface.png" )
 
     # contour
     fig2 = plt.figure()
     fig2 = plt.contour(data[0], data[1], data[2], np.logspace(-2, 3, 20))
-    plt.show()
+    plt.savefig("contour.png")
 
 
-    #Implementacion vectorial del descenso de gradiente
-
-    # """
-    # X:Matriz bidimensional de numpy de dimensiones (m,n)
-    # Y: matriz unidimensional de numpy de dimensiones (m,)
-    # Theta matriz unidimensional de numpy de dimensiones (n,)
-    # """
-    # def gradiente(X, Y, Theta, alpha):
-    #     NuevaTheta = Theta
-    #     m = np.shape(X)[0]
-    #     n = np.shape(X)[1]
-    #     H = np.dot(X, Theta)
-    #     Aux = (H - Y)
-    #     for i in range(n):
-    #         Aux[i] = Aux * X[:, i]#toda la fila de la columna i
-    #         NuevaTheta[i] -= (alpha / m) * Aux[i].sum()
-    #     return NuevaTheta
-    #def gradiente (X,Y,Theta,alpha)
-    #m=np.shape(X)[0]
-    #H=np.dot(X,Theta)
-    #return Theta - (alpha/m) * np.dot(np.transpose(X),(H-Y))
+    
 
 main()
 # %%
