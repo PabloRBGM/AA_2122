@@ -35,7 +35,7 @@ def gradiente(Theta, X, Y):
 #     return Theta
 
 def pinta_frontera(Theta, X, Y):
-    plt.figure()
+    #plt.figure()
     x1_min, x1_max = np.min(X[:, 1]), np.max(X[:, 1])#min y max de x1
     x2_min, x2_max = np.min(X[:, 2]), np.max(X[:, 2])#min y max de x2
 
@@ -75,7 +75,9 @@ def main():
 
     #plt.legend('Admitted')
     
-    plt.show()
+    #plt.show()  
+    plt.savefig("frontera.png")
+
     #print(coste(Theta,X,Y))
     #print(gradiente(Theta, X, Y))
     result=opt.fmin_tnc(func=coste, x0 = Theta, fprime = gradiente, args=(X, Y))
