@@ -1,6 +1,7 @@
 #%%
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.core.fromnumeric import size
 import scipy.optimize as opt
 import math
 import sklearn.preprocessing as sp
@@ -32,26 +33,20 @@ def gradiente(Theta, X, Y, _lambda):
     return (1/m) * np.matmul(np.transpose(X), H - Y) + ((_lambda / m ) * Theta)
 
 
-# Calcula el porcentaje de casos evaluados correctamente
-def evaluacion_reg_logisitica(X, Y ,theta):  
-    
-    h = sigmoide(np.matmul(X,theta))
-
-    #calcular aprobados
-    apr_calculado = np.where(h >= 0.5)
-    apr_real = np.where(Y == 1.0)
-    apr_aux =np.in1d(apr_real, apr_calculado)
-    apr_tmp = np.where(apr_aux == True)
-
-    #calcular suspensos
-    sus_calculado = np.where(h < 0.5)
-    sus_real = np.where(Y != 1.0)
-    sus_aux=np.in1d(sus_real, sus_calculado)
-    sus_tmp = np.where(sus_aux == True)  
-
-    total = np.shape(apr_tmp)[1] + np.shape(sus_tmp)[1]
-    #print(total/len(Y))
-    return total/len(Y)
+def evaluacion(X,Y,thetaMat):
+    # X (5000x401) thetaMat(t) (401x10)
+    #hMat = sigmoide(np.matmul(X,np.transpose(thetaMat)))  # matriz de 5000x10 con las predicciones de cada theta
+    thetaT = np.transpose(thetaMat)
+    hMat = np.matmul(X,thetaT)  # matriz de 5000x10 con las predicciones de cada theta
+    nCases = np.shape(hMat)[0]
+    MaxIndex = np.zeros(nCases)
+    for i in range(nCases):
+        MaxIndex[i]=np.argmax(hMat[i])
+        if(MaxIndex[i]==0):
+            MaxIndex[i]=10
+    Num= np.sum(np.ravel(Y) == MaxIndex)
+    Porcentaje=Num/nCases * 100
+    print(Porcentaje)
 
 def oneVsAll(X, y, num_etiquetas, reg):
     """
@@ -73,9 +68,8 @@ def oneVsAll(X, y, num_etiquetas, reg):
         print(np.shape(y_i))
         result = opt.fmin_tnc(func=coste, x0 = Theta, fprime = gradiente, args=(X1s, y_i, reg))
         theta_mat[i] = result[0]
-        porcentaje[i] =  evaluacion_reg_logisitica(X1s, y_i ,theta_mat[i])
-        
-    print(porcentaje)
+        #porcentaje[i] =  evaluacion_reg_logisitica(X1s, y_i ,theta_mat[i])
+    evaluacion(X1s,y,theta_mat)    
 
 
 def main():
@@ -91,11 +85,9 @@ def main():
     #plt.show()
     print(y)
 
-    #1.2 Clasificacion de uno frente a todos  
-    
+    #1.2 Clasificacion de uno frente a todos    
     
     oneVsAll(X,y, 10, 0.1)
-    #print (result)
 
    
 main()
