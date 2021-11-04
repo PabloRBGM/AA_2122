@@ -33,6 +33,7 @@ def main():
     theta1 = weigths['Theta1'] # 25 x 401
     theta2 = weigths['Theta2'] # 10 x 26 
 
+    # Propagación
     a_1 = np.hstack([np.ones([np.shape(X)[0], 1]), X]) # 5000 x 401
     z_2 = np.matmul(a_1, np.transpose(theta1)) # 5000 x 25
     a_2=sigmoide(z_2)

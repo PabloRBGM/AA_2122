@@ -9,7 +9,7 @@ from pandas.io.parsers import read_csv
 from scipy.io import loadmat
 
 #ir caso a caso de X viendo que predice cada theta y quedarnos con el mayor y luego comprobar si es realmente ese
-#por los 401 casos, probar si es 0,1,2...9, ver cual es mayor y lo guardamos, luego comprobar si es cierto
+#por los 5000 casos, probar si es 0,1,2...9, ver cual es mayor y lo guardamos, luego comprobar si es cierto
 
 # Calcula la funcion sigmoide 
 def sigmoide(z):
@@ -67,7 +67,7 @@ def oneVsAll(X, y, num_etiquetas, reg):
         result = opt.fmin_tnc(func=coste, x0 = Theta, fprime = gradiente, args=(X1s, y_i, reg))
         theta_mat[i] = result[0]
 
-    evaluacion(X1s,y,theta_mat)
+    
     return theta_mat    
 
 def main():
@@ -81,10 +81,12 @@ def main():
     plt.imshow(np.transpose(np.reshape(X[sample, :],[-1,20])))
     plt.axis('off')
     #plt.show()
-    print(y)
+
+    m = np.shape(X)[0]
+    X1s = np.hstack([np.ones([m, 1]), X])
 
     #1.2 Clasificacion de uno frente a todos    
-    oneVsAll(X,y, 10, 0.1)
+    evaluacion(X1s,y,oneVsAll(X,y, 10, 0.1))
 
    
 main()
