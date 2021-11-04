@@ -12,22 +12,6 @@ from scipy.io import loadmat
 def sigmoide(z):
     return 1/(1+math.e**(-z))
 
-#  Calcula el coste (regularizado)
-def coste(theta, X, Y ,_lambda):
-    H = sigmoide(np.matmul(X,theta)) 
-    m = np.shape(X)[0]
-    # usamos la formula con las traspuestas
-    coste = (- 1 / (len(X))) * np.sum( Y * np.log(H) + (1 - Y) * np.log(1 - H + 1e-6) )
-
-    regularizacion = (_lambda /(2+m) ) * np.sum(np.power(theta,2))
-    coste += regularizacion
-    return coste
-
-#  Calcula el gradiente (regularizado)
-def gradiente(Theta, X, Y, _lambda):
-    H = sigmoide(np.matmul(X, Theta))
-    m = np.shape(X)[0]
-    return (1/m) * np.matmul(np.transpose(X), H - Y) + ((_lambda / m ) * Theta)
 
 # Calcula el porcentaje de éxito de nuestro modelo multi-clase
 def evaluacion(y, a_3):

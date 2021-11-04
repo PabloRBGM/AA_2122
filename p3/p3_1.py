@@ -67,11 +67,12 @@ def oneVsAll(X, y, num_etiquetas, reg):
         result = opt.fmin_tnc(func=coste, x0 = Theta, fprime = gradiente, args=(X1s, y_i, reg))
         theta_mat[i] = result[0]
 
-    evaluacion(X1s,y,theta_mat)    
+    evaluacion(X1s,y,theta_mat)
+    return theta_mat    
 
 def main():
     #1.1 mostrar numeritos
-    data = loadmat('ex3data.mat')
+    data = loadmat('ex3data1.mat')
 # se pueden consultar las claves con data.keys( )
     y = data [ 'y' ]
     X = data [ 'X' ]
