@@ -32,12 +32,10 @@ def gradiente(Theta, X, Y, _lambda):
     m = np.shape(X)[0]
     return (1/m) * np.matmul(np.transpose(X), H - Y) + ((_lambda / m ) * Theta)
 
-
+# Calcula el porcentaje de éxito de nuestro modelo multi-clase
 def evaluacion(X,Y,thetaMat):
     # X (5000x401) thetaMat(t) (401x10)
-    #hMat = sigmoide(np.matmul(X,np.transpose(thetaMat)))  # matriz de 5000x10 con las predicciones de cada theta
-    thetaT = np.transpose(thetaMat)
-    hMat = np.matmul(X,thetaT)  # matriz de 5000x10 con las predicciones de cada theta
+    hMat = np.matmul(X,np.transpose(thetaMat))  # matriz de 5000x10 con las predicciones de cada theta
     nCases = np.shape(hMat)[0]
     MaxIndex = np.zeros(nCases)
     for i in range(nCases):
@@ -68,13 +66,12 @@ def oneVsAll(X, y, num_etiquetas, reg):
         print(np.shape(y_i))
         result = opt.fmin_tnc(func=coste, x0 = Theta, fprime = gradiente, args=(X1s, y_i, reg))
         theta_mat[i] = result[0]
-        #porcentaje[i] =  evaluacion_reg_logisitica(X1s, y_i ,theta_mat[i])
-    evaluacion(X1s,y,theta_mat)    
 
+    evaluacion(X1s,y,theta_mat)    
 
 def main():
     #1.1 mostrar numeritos
-    data = loadmat('ex3data1.mat')
+    data = loadmat('ex3data.mat')
 # se pueden consultar las claves con data.keys( )
     y = data [ 'y' ]
     X = data [ 'X' ]
@@ -86,7 +83,6 @@ def main():
     print(y)
 
     #1.2 Clasificacion de uno frente a todos    
-    
     oneVsAll(X,y, 10, 0.1)
 
    
