@@ -76,42 +76,39 @@ def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, Y, reg):
 
         Delta1 = Delta1 + np.dot(d2t[1:,np.newaxis],a1t[np.newaxis,:])
         Delta2 = Delta2 + np.dot(d3t[:,np.newaxis],a2t[np.newaxis,:])
+        
     
-    D1 = (1/m) * Delta1
-    D2 = (1/m) * Delta2
+    Theta1ceros = Theta1[:,1:]
+    Theta1ceros = np.hstack([np.zeros([np.shape(Theta1)[0], 1]), Theta1ceros]) 
+    D1 = (1/m) * (Delta1 + reg * Theta1ceros)
+    
+    Theta2ceros = Theta2[:,1:]
+    Theta2ceros = np.hstack([np.zeros([np.shape(Theta2)[0], 1]), Theta2ceros]) 
+    D2 = (1/m) * (Delta2 + reg * Theta2ceros)
+
     # Unroll del gradiente
     gradientVec = np.concatenate((np.ravel(D1),np.ravel(D2)))
-
-    # Calculo dle coste
-    # Y = (Y-1)
-    # y_onehot = np.zeros((m,num_etiquetas)) # 5000 x 10
-    # for i in range(m):
-    #     y_onehot[i][Y[i]] = 1
     
-    jVal = coste(Theta1, Theta2, X, Y)
+    jVal = coste_reg(Theta1, Theta2, X, Y, reg)
 
     return (jVal, gradientVec)
 
-#comprobar que funciona el gradiente
-
-
 def main():
+    # data = loadmat('ex4data1.mat')
+    # Y = np.ravel(data[ 'y' ])
+    # X = data [ 'X' ]
 
-    data = loadmat('ex4data1.mat')
-    Y = np.ravel(data[ 'y' ])
-    X = data [ 'X' ]
+    # weigths = loadmat('ex4weights.mat')
+    # theta1 = weigths['Theta1'] # 25 x 401
+    # theta2 = weigths['Theta2'] # 10 x 26 
 
-    weigths = loadmat('ex4weights.mat')
-    theta1 = weigths['Theta1'] # 25 x 401
-    theta2 = weigths['Theta2'] # 10 x 26 
-
-    params_rn = np.concatenate((np.ravel(theta1), np.ravel(theta2)))
-    num_entradas = np.shape(X)[1]
-    num_ocultas = np.shape(theta1)[0]
-    num_etiquetas = np.shape(theta2)[0]
+    # params_rn = np.concatenate((np.ravel(theta1), np.ravel(theta2)))
+    # num_entradas = np.shape(X)[1]
+    # num_ocultas = np.shape(theta1)[0]
+    # num_etiquetas = np.shape(theta2)[0]
 
     #ret = backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, Y, 1)
-    print(checkNNGradients(backprop, 0))
+    print(checkNNGradients(backprop, 1))
 main()
 # %%
 
