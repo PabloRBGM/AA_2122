@@ -24,12 +24,7 @@ def coste(theta1,theta2, X, Y ):
     
     return coste
 
-def coste_reg(thetas, X, Y, _lambda):
-    
-    theta1 = np.reshape(thetas[:25 * (400 +1)], (25, (400+1)))
-    theta2 = np.reshape(thetas[25 * (400 +1):], (10, (25+1)))
-    
-    
+def coste_reg(theta1, theta2, X, Y, _lambda):
     
     a_1, a_2, H = forward_propagate(X, theta1, theta2)
     theta1 = theta1[:,1:]
@@ -42,6 +37,19 @@ def coste_reg(thetas, X, Y, _lambda):
     coste += regularizacion
     
     return coste
+
+    # def coste_reg(theta1, theta2, X, Y, _lambda):
+    # a_1, a_2, H = forward_propagate(X, theta1, theta2)
+    # theta1 = theta1[:,1:]
+    # theta2 = theta2[:,1:]
+    # m = np.shape(X)[0]
+    # # usamos la formula con las traspuestas
+    # coste = (- 1 / (m)) * np.sum(Y * np.log(H) + (1 - Y) * np.log(1 - H + 1e-9))
+    
+    # regularizacion = (_lambda /(2*m)) * (np.sum(np.power(theta1,2)) + np.sum(np.power(theta2,2)))
+    # coste += regularizacion
+    
+    # return coste
 
 #  Calcula el gradiente (regularizado)
 def gradiente(Theta, X, Y, _lambda):
@@ -96,42 +104,63 @@ def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, Y, reg):
     gradientVec = np.concatenate((np.ravel(D1),np.ravel(D2)))
     
     jVal = coste_reg(Theta1, Theta2, X, Y, reg)
-
     return (jVal, gradientVec)
 
-def trainint(nIter, X, Y, Theta1, Theta2, reg):
-    X0 = np.concatenate((np.ravel(Theta1), np.ravel(Theta2)))
-    res = opt.minimize(coste_reg, X0, args=( X, Y, reg))
-
+def trainint(params, num_entradas, num_ocultas, num_etiquetas, X, Y, reg, nIter):
+    
+    res = opt.minimize(
+        fun=backprop, 
+        x0=params, 
+        args=( num_entradas, num_ocultas, num_etiquetas, X, Y, reg), 
+        method='TNC',
+        jac=True,
+        options={'maxiter': nIter})
+   
+    
     return res
 
+# Calcula el porcentaje de éxito de nuestro modelo multi-clase
+# params son los pesos de la red neuronal entrenados
+def evaluacion(X,y, params, num_entradas, num_ocultas, num_etiquetas):
+
+    Theta1 = np.reshape(params[:num_ocultas * (num_entradas +1)], (num_ocultas, (num_entradas+1)))
+    Theta2 = np.reshape(params[num_ocultas * (num_entradas +1):], (num_etiquetas, (num_ocultas+1)))
+
+    A1, A2, H=forward_propagate(X,Theta1, Theta2)
+    MaxIndex=np.zeros(np.shape(H)[0])
+    for i in range(np.shape(H)[0]):
+        MaxIndex[i]=np.argmax(H[i]) + 1#mas uno por como esta ordenado,el 0 equivale a 1... el 9 a un 10
+        
+    Num= np.sum(np.ravel(y) == MaxIndex)
+    Porcentaje=Num/np.shape(y)[0] * 100
+    print(Porcentaje)
 
 def main():
     data = loadmat('ex4data1.mat')
     Y = np.ravel(data[ 'y' ])
     X = data [ 'X' ]
-
-    # weigths = loadmat('ex4weights.mat')
-    # theta1 = weigths['Theta1'] # 25 x 401
-    # theta2 = weigths['Theta2'] # 10 x 26 
-
-    # params_rn = np.concatenate((np.ravel(theta1), np.ravel(theta2)))
-    # num_entradas = np.shape(X)[1]
-    # num_ocultas = np.shape(theta1)[0]
-    # num_etiquetas = np.shape(theta2)[0]
-
-    #ret = backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, Y, 1)
-    #print(checkNNGradients(backprop, 1))
+    
     _low = -0.12
     _high = -_low
 
-    Theta1 = np.random.uniform(low=_low, high=_high, size=(25,400) )
-    Theta2 = np.random.uniform(low=_low, high=_high, size=(10,25) )
-    np.hstack([np.ones([np.shape(Theta1)[0], 1]), Theta1])     
-    np.hstack([np.ones([np.shape(Theta2)[0], 1]), Theta2])     
-    trainint(70, X, Y, Theta1, Theta2, 1)
+    Theta1 = np.random.uniform(low=_low, high=_high, size=(25,401) )
+    Theta2 = np.random.uniform(low=_low, high=_high, size=(10,26) )
+   
+    num_entradas = np.shape(X)[1]
+    num_ocultas = np.shape(Theta1)[0]
+    num_etiquetas = np.shape(Theta2)[0]
 
-    opt.minimize()
+
+    m = len(Y)
+    #Para tener mas ordenada la matriz y. Para evitar pasarnos con los indices
+    y = (Y-1)
+    y_onehot = np.zeros((m,num_etiquetas)) # 5000 x 10
+    for i in range(m):
+        y_onehot[i][y[i]] = 1
+    params = np.concatenate((np.ravel(Theta1), np.ravel(Theta2)))
+    res = trainint(params,num_entradas,num_ocultas, num_etiquetas, X,y_onehot, 1, 70 )
+
+    evaluacion( X, Y, res.x,num_entradas,num_ocultas, num_etiquetas)
 
 main()
 # %%
