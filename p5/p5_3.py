@@ -2,6 +2,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.optimize as opt
+import sklearn.preprocessing as sp
+
 import math
 from scipy.io import loadmat
 
@@ -62,10 +64,37 @@ def error(theta, X, Y):
     coste = (1/ (2 * np.shape(X)[0])) * np.sum(Aux)
     return coste
 
+
+def polinomizar(X, p):
+    return sp.PolynomialFeatures(p).fit_transform(X)[:,1:]
+
+def normalizar(X):
+    #valor - media / std
+    xMean = np.mean(X, 0)
+    xStd = np.std(X, 0)
+    res = (X - xMean) / xStd
+    return res
+
+# Pinta la grafica con la frontera de decision
+def plot_decisionboundary(X, Y, theta, name):
+
+    x1_min, x1_max = np.min(X[:, 0]), np.max(X[:, 0])#min y max de x1
+    x2_min, x2_max = np.min(X[:, 1]), np.max(X[:, 1])#min y max de x2
+    xx1, xx2 = np.meshgrid(np.linspace(x1_min, x1_max), np.linspace(x2_min, x2_max))
+    poly = sp.PolynomialFeatures(6)   
+    
+    h=costeReg(theta, X, Y, 0)
+    h = np.reshape(h,np.shape(xx1))
+    plt.contour(xx1, xx2, h, [0.5], linewidths=1, colors='g')
+    plt.savefig(name)
+    plt.close()
+
 def main():
 
     data = loadmat('ex5data1.mat')
     X=data["X"]
+    p = 8
+    Xnorm = normalizar(polinomizar(X, p))
     X_1s = np.hstack([np.ones([np.shape(X)[0], 1]), X]) 
     Y=data["y"]
     Xval=data["Xval"]
@@ -75,24 +104,20 @@ def main():
     Ytest=data["ytest"]
 
     _lambda = 0
-    y = np.ravel(Y)
-    Theta = np.array([1,1])
-    cValidationCoste = np.zeros(np.shape(X)[0] )
-    errorCoste = np.zeros(np.shape(X)[0] )
-    for i in range(1, np.shape(X)[0] + 1):
-        res = trainit(Theta, X_1s[0:i], y[0:i], _lambda, 70)
-        cValidationCoste[i - 1] = error(res.x, Xval_1s, np.ravel(Yval))
-        errorCoste[i - 1] = error(res.x, X_1s[0:i], y[0:i])
+    Theta = np.ones(np.shape(Xnorm)[1])
+    #Theta = Theta.reshape(-1, 1)
+    res = trainit(Theta, Xnorm, np.ravel(Y), _lambda, 70)
+    #print(res)
 
-
- 
-    plt.plot(errorCoste, c='blue')
-
-    plt.ylabel("Error")
-    plt.xlabel("Change water level (x)Number of training examples")
-    plt.plot(cValidationCoste, c='orange')
-
-    plt.savefig("Resultado Error Training-Cross")
+    plt.plot(X, Y, "x", c='red')
+    min_x = min(np.ravel(Xnorm))
+    max_X = max(np.ravel(Xnorm))
+    min_y = np.sum(res.x) * min_x
+    max_Y = res.x[0] + res.x[1] * max_X
+    plt.plot([min_x, max_X], [min_y, max_Y], c='blue')
+    plt.ylabel("Water flowing out of the dam (y)")
+    plt.xlabel("Change water level (x)")
+    plt.show()
     
     #print(costeReg(Theta,X_1s,y,_lambda))
     #print(gradiente(Theta, X_1s,y,_lambda))
