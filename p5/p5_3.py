@@ -110,13 +110,30 @@ def main():
     #print(res)
 
     plt.plot(X, Y, "x", c='red')
-    min_x = min(np.ravel(Xnorm))
-    max_X = max(np.ravel(Xnorm))
+    min_x = min(res.x)
+    max_X = max(res.x)
     min_y = np.sum(res.x) * min_x
-    max_Y = res.x[0] + res.x[1] * max_X
-    plt.plot([min_x, max_X], [min_y, max_Y], c='blue')
-    plt.ylabel("Water flowing out of the dam (y)")
-    plt.xlabel("Change water level (x)")
+    max_Y = np.sum(res.x) * max_X
+
+    range_X = np.arange(min_x, max_X, 0.05)
+    range_X = np.reshape(range_X, (-1,1))
+    m = np.shape(range_X)[0]
+    h = sigmoide(
+        np.dot
+            (
+                range_X, 
+                np.transpose(np.reshape(res.x, (-1,1)))
+            )
+    )
+
+    z = np.shape(range_X)[0]
+    aux = np.zeros(z)
+    for i in range(z):
+        aux[i] = sum(h[i])
+
+    plt.plot(range_X, aux, c='blue')
+    # plt.ylabel("Water flowing out of the dam (y)")
+    # plt.xlabel("Change water level (x)")
     plt.show()
     
     #print(costeReg(Theta,X_1s,y,_lambda))
