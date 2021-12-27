@@ -101,45 +101,61 @@ def prueba(theta, xVal, n):
 def main():
 
     data = loadmat('ex5data1.mat')
-    X=data["X"]
     p = 8
+    
+    X=data["X"]
     Xpoly = polinomizar(X, p)
     Xnorm, Xmean, Xstd = normalizar(Xpoly)
     Xnorm = np.hstack([np.ones([np.shape(Xnorm)[0], 1]), Xnorm]) 
+
     Y=data["y"]
     y = np.ravel(Y)
+
     Xval=data["Xval"]
-    Xval_1s = np.hstack([np.ones([np.shape(Xval)[0], 1]), Xval]) 
+    Xval_poly = polinomizar(Xval, p)
+    Xval_norm = normalizar_m_std(Xval_poly, Xmean, Xstd)
+    Xval_norm = np.hstack([np.ones([np.shape(Xval_norm)[0], 1]), Xval_norm])
+
     Yval=data["yval"]
     Xtest=data["Xtest"]
-    Ytest=data["ytest"]
+    Ytest=data["ytest"] 
+    _lambda = 100
 
-    _lambda = 0
+    # Predicciones con sobreajuste
     Theta = np.ones(np.shape(Xnorm)[1])
-    res = trainit(Theta, Xnorm, y, _lambda, 500)
+    #res = trainit(Theta, Xnorm, y, _lambda, 500)
+    #
+    #plt.plot(X, Y, "x", c='red')
+    #min_x = min(X)
+    #max_X = max(X)
+    #
+    #range_X = np.arange(min_x, max_X, 0.05)
+    #range_X = np.reshape(range_X, (-1,1))
+    #norm_range_X = normalizar_m_std(polinomizar(range_X, p), Xmean, Xstd)
+    #norm_range_X = np.hstack([np.ones([np.shape(norm_range_X)[0], 1]), norm_range_X]) 
+    #newY = np.dot(norm_range_X, res.x)
+    #
+    #plt.plot(range_X, newY, c='blue')
+    #plt.ylabel("Water flowing out of the dam (y)")
+    #plt.xlabel("Change water level (x)")
+    #plt.savefig("resultado3")
 
-    plt.plot(X, Y, "x", c='red')
-    min_x = min(X)
-    max_X = max(X)
+    # Curvas de aprendizaje
+    errorCoste = np.zeros(np.shape(Xnorm)[0] )
+    cValidationCoste = np.zeros(np.shape(Xnorm)[0] )
+    for i in range(1, np.shape(Xnorm)[0] + 1):
+        res = trainit(Theta, Xnorm[0:i], y[0:i], _lambda, 100)
+      
+        cValidationCoste[i - 1] = error(res.x, Xval_norm, np.ravel(Yval))
+        errorCoste[i - 1] = error(res.x, Xnorm[0:i], y[0:i])
     
-    range_X = np.arange(min_x, max_X, 0.05)
-    range_X = np.reshape(range_X, (-1,1))
-    norm_range_X = normalizar_m_std(polinomizar(range_X, p), Xmean, Xstd)
-    norm_range_X = np.hstack([np.ones([np.shape(norm_range_X)[0], 1]), norm_range_X]) 
-    newY = np.dot(norm_range_X, res.x)
+    plt.plot(errorCoste, c='blue')
 
-    plt.plot(range_X, newY, c='blue')
-    plt.ylabel("Water flowing out of the dam (y)")
-    plt.xlabel("Change water level (x)")
-    plt.savefig("resultado3")
+    plt.ylabel("Error")
+    plt.xlabel("Change water level (x)Number of training examples")
+    plt.plot(cValidationCoste, c='orange')
 
-    # cValidationCoste = np.zeros(np.shape(X)[0] )
-    # errorCoste = np.zeros(np.shape(X)[0] )
-    # for i in range(1, np.shape(X)[0] + 1):
-    #     res = trainit(Theta, Xnorm[0:i], y[0:i], _lambda, 70)
-        
-    #     cValidationCoste[i - 1] = error(res.x, Xval_1s, np.ravel(Yval))
-    #     errorCoste[i - 1] = error(res.x, X_1s[0:i], y[0:i])
+    plt.savefig("Curvas aprendizaje 3 reg 100")
 
 main()
 # %%
