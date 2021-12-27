@@ -73,7 +73,10 @@ def normalizar(X):
     xMean = np.mean(X, 0)
     xStd = np.std(X, 0)
     res = (X - xMean) / xStd
-    return res
+    return res, xMean, xStd
+
+def normalizar_m_std(X, m, std):
+    return (X - m) / std
 
 # Pinta la grafica con la frontera de decision
 def plot_decisionboundary(X, Y, theta, name):
@@ -89,14 +92,22 @@ def plot_decisionboundary(X, Y, theta, name):
     plt.savefig(name)
     plt.close()
 
+def prueba(theta, xVal, n):
+    aux = 0
+    for i in range(n):
+        aux += theta[i] * xVal[i]#**n
+    return aux
+
 def main():
 
     data = loadmat('ex5data1.mat')
     X=data["X"]
     p = 8
-    Xnorm = normalizar(polinomizar(X, p))
-    X_1s = np.hstack([np.ones([np.shape(X)[0], 1]), X]) 
+    Xpoly = polinomizar(X, p)
+    Xnorm, Xmean, Xstd = normalizar(Xpoly)
+    Xnorm = np.hstack([np.ones([np.shape(Xnorm)[0], 1]), Xnorm]) 
     Y=data["y"]
+    y = np.ravel(Y)
     Xval=data["Xval"]
     Xval_1s = np.hstack([np.ones([np.shape(Xval)[0], 1]), Xval]) 
     Yval=data["yval"]
@@ -105,39 +116,30 @@ def main():
 
     _lambda = 0
     Theta = np.ones(np.shape(Xnorm)[1])
-    #Theta = Theta.reshape(-1, 1)
-    res = trainit(Theta, Xnorm, np.ravel(Y), _lambda, 70)
-    #print(res)
+    res = trainit(Theta, Xnorm, y, _lambda, 500)
 
     plt.plot(X, Y, "x", c='red')
-    min_x = min(res.x)
-    max_X = max(res.x)
-    min_y = np.sum(res.x) * min_x
-    max_Y = np.sum(res.x) * max_X
-
+    min_x = min(X)
+    max_X = max(X)
+    
     range_X = np.arange(min_x, max_X, 0.05)
     range_X = np.reshape(range_X, (-1,1))
-    m = np.shape(range_X)[0]
-    h = sigmoide(
-        np.dot
-            (
-                range_X, 
-                np.transpose(np.reshape(res.x, (-1,1)))
-            )
-    )
+    norm_range_X = normalizar_m_std(polinomizar(range_X, p), Xmean, Xstd)
+    norm_range_X = np.hstack([np.ones([np.shape(norm_range_X)[0], 1]), norm_range_X]) 
+    newY = np.dot(norm_range_X, res.x)
 
-    z = np.shape(range_X)[0]
-    aux = np.zeros(z)
-    for i in range(z):
-        aux[i] = sum(h[i])
+    plt.plot(range_X, newY, c='blue')
+    plt.ylabel("Water flowing out of the dam (y)")
+    plt.xlabel("Change water level (x)")
+    plt.savefig("resultado3")
 
-    plt.plot(range_X, aux, c='blue')
-    # plt.ylabel("Water flowing out of the dam (y)")
-    # plt.xlabel("Change water level (x)")
-    plt.show()
-    
-    #print(costeReg(Theta,X_1s,y,_lambda))
-    #print(gradiente(Theta, X_1s,y,_lambda))
+    # cValidationCoste = np.zeros(np.shape(X)[0] )
+    # errorCoste = np.zeros(np.shape(X)[0] )
+    # for i in range(1, np.shape(X)[0] + 1):
+    #     res = trainit(Theta, Xnorm[0:i], y[0:i], _lambda, 70)
+        
+    #     cValidationCoste[i - 1] = error(res.x, Xval_1s, np.ravel(Yval))
+    #     errorCoste[i - 1] = error(res.x, X_1s[0:i], y[0:i])
 
 main()
 # %%
