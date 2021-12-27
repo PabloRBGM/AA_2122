@@ -58,7 +58,6 @@ def trainit(Theta, X, Y, reg, nIter):
 # Calcula el error (similar al coste pero sin regularizacion)
 def error(theta, X, Y):
     H = np.dot(X, theta)
-# Es el cuadrado porque son matrices unidimensionales
     Aux = np.power((H - Y),2)
     
     coste = (1/ (2 * np.shape(X)[0])) * np.sum(Aux)
@@ -69,7 +68,6 @@ def polinomizar(X, p):
     return sp.PolynomialFeatures(p).fit_transform(X)[:,1:]
 
 def normalizar(X):
-    #valor - media / std
     xMean = np.mean(X, 0)
     xStd = np.std(X, 0)
     res = (X - xMean) / xStd
