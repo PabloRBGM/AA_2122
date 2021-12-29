@@ -21,16 +21,16 @@ def visualize_boundary(X, y, svm, file_name):
 
 def main():
     data1 = loadmat('ex6data1.mat')
-    X1  = data1['X']
+    X  = data1['X']
     # X1val = data1['Xval']
     # X1test = data1['Xtest']
-    y1 = data1['y']
+    y = data1['y']
     # y1val = data1['yval']
     # y1test = data1['ytest']
 
     svm = s_svm.SVC(C=100.0, kernel='linear')
-    svm.fit(X1, y1)
-    visualize_boundary(X1, np.ravel(y1), svm, "6_1B.png")
+    svm.fit(X, y)
+    visualize_boundary(X, np.ravel(y), svm, "6_1B.png")
 
 main()
 # %%

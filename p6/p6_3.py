@@ -5,6 +5,7 @@ import scipy.optimize as opt
 import sklearn.preprocessing as sp
 import sklearn.svm as s_svm
 from scipy.io import loadmat
+from sklearn.metrics import accuracy_score
 
 def visualize_boundary(X, y, svm, file_name):
     x1 = np.linspace(X[:, 0].min() - 0.1, X[:, 0].max() + 0.1, 100)
@@ -21,19 +22,32 @@ def visualize_boundary(X, y, svm, file_name):
     plt.savefig(file_name)
     plt.close()
 
+def hyperparameter_tuning(X, y, Xval, yval):
+    C = 0.01
+    n_iter = 8
+    scores = np.zeros((n_iter, n_iter))
+    for i in range(n_iter):
+        sigma = 0.01
+        for j in range(n_iter):
+            svm = s_svm.SVC(C=C, kernel='rbf', gamma= (1 / (2*sigma**2)))
+            svm.fit(X, y)
+            scores[i][j] = accuracy_score(yval, svm.predict(Xval))
+            #print("accuracy: ",  accuracy_score(yval, svm.predict(Xval)))
+            sigma *= 3
+        C *= 3
+    print(scores)
+    print("maxAcc: ", np.max(scores))
+
+
 def main():
-    data1 = loadmat('ex6data2.mat')
-    X1  = data1['X']
-    # X1val = data1['Xval']
-    # X1test = data1['Xtest']
-    y1 = data1['y']
-    # y1val = data1['yval']
-    # y1test = data1['ytest']
-    C = 1.0
-    sigma = 0.1
-    svm = s_svm.SVC(C=C, kernel='rbf', gamma= (1 / (2*sigma**2)))
-    svm.fit(X1, y1)
-    visualize_boundary(X1, np.ravel(y1), svm, "6_2.png")
+    data1 = loadmat('ex6data3.mat')
+    X  = data1['X']
+    Xval = data1['Xval']
+    y = data1['y']
+    yval = data1['yval']
+
+    hyperparameter_tuning(X, np.ravel(y), Xval, np.ravel(yval))
+
 
 main()
 # %%
