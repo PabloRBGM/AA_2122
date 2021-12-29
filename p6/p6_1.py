@@ -30,9 +30,9 @@ def main():
     # y1val = data1['yval']
     # y1test = data1['ytest']
 
-    svm = s_svm.SVC(C=1.0, kernel='linear', tol=0.001, max_iter=-1)
+    svm = s_svm.SVC(C=100.0, kernel='linear')
     svm.fit(X1, y1)
-    visualize_boundary(X1, np.ravel(y1), svm, "test.png")
+    visualize_boundary(X1, np.ravel(y1), svm, "6_1B.png")
 
 main()
 # %%
