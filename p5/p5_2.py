@@ -82,12 +82,10 @@ def main():
         cValidationCoste[i - 1] = error(res.x, Xval_1s, np.ravel(Yval))
         errorCoste[i - 1] = error(res.x, X_1s[0:i], y[0:i])
 
-
- 
     plt.plot(errorCoste, c='blue')
 
     plt.ylabel("Error")
-    plt.xlabel("Change water level (x)Number of training examples")
+    plt.xlabel("Number of training examples")
     plt.plot(cValidationCoste, c='orange')
 
     plt.savefig("Resultado Error Training-Cross")
