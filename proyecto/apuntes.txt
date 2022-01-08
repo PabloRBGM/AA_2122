@@ -1,0 +1,3 @@
+Decimal - resto
+String - artist_name, track_name, key, music_genre, mode, tempo
+DateTime - obtained_date
