@@ -106,12 +106,13 @@ def learning_curve(Theta, X, y, Xval, Yval, _lambda):
         cValidationCoste[i - 1] = error(res.x, Xval, np.ravel(Yval))
         errorCoste[i - 1] = error(res.x, X[0:i], y[0:i])      
 
-    #plt.plot(errorCoste, c='blue')
-    #plt.ylabel("Error")
-    #plt.xlabel("Change water level (x)Number of training examples")
-    #plt.plot(cValidationCoste, c='orange')
-    #
-    #plt.savefig("Curvas aprendizaje 3 reg {0}.png".format(_lambda))
+    # plt.plot(errorCoste, c='blue')
+    # plt.ylabel("Error")
+    # plt.xlabel("Number of training examples")
+    # plt.plot(cValidationCoste, c='orange')
+    
+    # plt.savefig("Curvas aprendizaje 3 reg {0}.png".format(_lambda))
+    # plt.clf()
 
 def lambdaSelection(_lambdas, Theta, X, y, Xval, Yval, Xtest, Ytest):
     n = np.size(_lambdas)
@@ -123,6 +124,8 @@ def lambdaSelection(_lambdas, Theta, X, y, Xval, Yval, Xtest, Ytest):
         coste[i] = error(res.x, X, y)
         costeVal[i] = error(res.x, Xval, Yval)
         costeTest[i] = error(res.x, Xtest, Ytest)
+        #learning_curve(Theta, X, y, Xval, np.ravel(Yval), _lambdas[i])
+
     
     plt.plot(_lambdas, coste, c='blue')
     plt.plot(_lambdas, costeVal, c='orange')
@@ -164,7 +167,7 @@ def main():
 
     lambdas = np.array([0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10])
     coste, costeVal, costeTest = lambdaSelection(lambdas, Theta, Xnorm, np.ravel(Y), Xval_norm, np.ravel(Yval), Xtest_norm, np.ravel(Ytest))
-    print(costeTest[8])
+    #print(costeTest[8])
 
 main()
 # %%

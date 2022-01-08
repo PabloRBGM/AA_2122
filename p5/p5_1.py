@@ -73,8 +73,8 @@ def main():
     plt.savefig("resultado1.png")
     
     
-    #print(costeReg(Theta,X_1s,y,_lambda))
-    #print(gradiente(Theta, X_1s,y,_lambda))
+    print(costeReg(Theta,X_1s,y,_lambda))
+    print(gradiente(Theta, X_1s,y,_lambda))
 
 main()
 # %%

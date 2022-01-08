@@ -92,11 +92,6 @@ def plot_decisionboundary(X, Y, theta, name):
     plt.savefig(name)
     plt.close()
 
-def prueba(theta, xVal, n):
-    aux = 0
-    for i in range(n):
-        aux += theta[i] * xVal[i]#**n
-    return aux
 
 def main():
 
@@ -152,7 +147,7 @@ def main():
     plt.plot(errorCoste, c='blue')
 
     plt.ylabel("Error")
-    plt.xlabel("Change water level (x)Number of training examples")
+    plt.xlabel("Number of training examples")
     plt.plot(cValidationCoste, c='orange')
 
     plt.savefig("Curvas aprendizaje 3 reg 100")

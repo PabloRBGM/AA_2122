@@ -1,13 +1,8 @@
 #%%
 import numpy as np
-import matplotlib.pyplot as plt
-from numpy.core.fromnumeric import size
 import scipy.optimize as opt
 import math
-import sklearn.preprocessing as sp
-from pandas.io.parsers import read_csv
 from scipy.io import loadmat
-from  checkNNGradients import checkNNGradients
 #ir caso a caso de X viendo que predice cada theta y quedarnos con el mayor y luego comprobar si es realmente ese
 #por los 5000 casos, probar si es 0,1,2...9, ver cual es mayor y lo guardamos, luego comprobar si es cierto
 
