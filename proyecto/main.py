@@ -8,7 +8,7 @@ from pandas.io.parsers import read_csv
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
     dataHeader = data.columns.values
-    # indice de la columna y luego lo quitamos
+
     header = dict(enumerate(dataHeader.flatten(),0))
     header = dict((value,key) for key, value in header.items())
 
@@ -38,19 +38,19 @@ def clean_data(data):
                  header['obtained_date']], 1)
 
 
-    #rehacemos el diccionario sin las columnas que hemos quitado
+    # rehacemos el diccionario sin las columnas que hemos quitado
     dataHeader = np.delete(dataHeader,
                 [header['instance_id'],
                  header['track_name'],
                  header['obtained_date']], 0)
-    # indice de la columna y luego lo quitamos
+
     header = dict(enumerate(dataHeader.flatten(),0))
     header = dict((value,key) for key, value in header.items())
 
     # pasamos los strings a numeros
     data_ok[:, header['artist_name']] = np.unique(data_ok[:, header['artist_name']], return_inverse=True)[1]
     data_ok[:, header['key']] = np.unique(data_ok[:, header['key']], return_inverse=True)[1]
-    data_ok[:, header['mode']] = np.unique(data_ok[:, header['key']], return_inverse=True)[1]
+    data_ok[:, header['mode']] = np.unique(data_ok[:, header['mode']], return_inverse=True)[1]
     data_ok[:, header['music_genre']] = np.unique(data_ok[:, header['music_genre']], return_inverse=True)[1]
 
     return data_ok, header
@@ -75,19 +75,34 @@ def main():
     Xtest = np.empty((0, data_ok.shape[1]))
     Ytest = np.empty((0,1))
 
+    numTrain = 300
+    numVal = 100
+    numTest = 50
+
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):
         songs = index_songs_of_genre(data_ok, genres[i])
+        ini = 0
+        end = numTrain
 
-        Xtrain = np.append(Xtrain, data_ok[songs[:300]], axis=0)
-        Ytrain = np.append(Ytrain, np.full(300, genres[i]))
-        Xval =  np.append(Xval, data_ok[songs[300:400]], axis=0)
-        Yval =  np.append(Yval, np.full(100, genres[i]))
-        Xtest =  np.append(Xtest, data_ok[songs[400:450]], axis=0)
-        Ytest =  np.append(Ytest, np.full(50, genres[i]))
-        #print("{0}: {1}".format(genres[i],np.size(songs_of_genre(Y, genres[i]))))
+        Xtrain = np.append(Xtrain, data_ok[songs[ini:end]], axis=0)
+        Ytrain = np.append(Ytrain, np.full(numTrain, genres[i]))
+        ini = end
+        end += numVal
 
-    
+        Xval =  np.append(Xval, data_ok[songs[ini:end]], axis=0)
+        Yval =  np.append(Yval, np.full(numVal, genres[i]))
+        ini = end
+        end += numTest
 
+        Xtest =  np.append(Xtest, data_ok[songs[ini:end]], axis=0)
+        Ytest =  np.append(Ytest, np.full(numTest, genres[i]))
+
+    print("Training X cases: {0}".format(Xtrain.shape))
+    print("Training Y cases: {0}".format(Ytrain.shape))
+    print("Validation X cases: {0}".format(Xval.shape))
+    print("Validation Y cases: {0}".format(Yval.shape))
+    print("Test X cases: {0}".format(Xtest.shape))
+    print("Test Y cases: {0}".format(Ytest.shape))
 
 main()
