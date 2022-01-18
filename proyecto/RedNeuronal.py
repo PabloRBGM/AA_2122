@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from numpy.lib.index_tricks import AxisConcatenator
 import sklearn.svm as s_svm
 from pandas.io.parsers import read_csv
-from SVM import SVM_HyperparameterTuning
+
 # ajustamos los datos de entrada para nuestro modelo
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
@@ -59,18 +59,6 @@ def clean_data(data):
 def index_songs_of_genre(Y, genre):
     return np.where(Y == genre)[0]
 
-
-# Calcula el porcentaje de éxito de nuestro modelo multi-clase
-def evaluacion(y, classification):
-    MaxIndex=np.zeros(np.shape(classification)[0])
-
-    for i in range(np.shape(classification)[0]):
-        MaxIndex[i]=np.argmax(classification[i]) 
-        
-    Num= np.sum(np.ravel(y) == MaxIndex)
-    Porcentaje=Num/np.shape(y)[0] * 100
-    print("Succes: {0}%".format(Porcentaje))
-
 def main():
     data = read_csv("music_genre.csv")
   
@@ -115,6 +103,6 @@ def main():
     print("Validation X cases: {0}".format(Xval.shape))
     print("Validation Y cases: {0}".format(Yval.shape))
     print("Test X cases: {0}".format(Xtest.shape))
-    print("Test Y cases: {0}".format(Ytest.shape))    
+    print("Test Y cases: {0}".format(Ytest.shape))
 
 main()
