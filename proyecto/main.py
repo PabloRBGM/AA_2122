@@ -1,4 +1,7 @@
 import numpy as np
+# warning is not logged here. Perfect for clean unit test output
+# with np.errstate(divide='ignore'):
+#     np.float64(1.0) / 0.0
 import matplotlib.pyplot as plt
 from numpy.lib.index_tricks import AxisConcatenator
 import sklearn.svm as s_svm
@@ -6,6 +9,11 @@ from pandas.io.parsers import read_csv
 from SVM import SVM_HyperparameterTuning
 from RegresionLogistica import LR_HyperparameterTuning
 from RedNeuronal import RN_HyperparameterTuning
+#----
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import roc_curve, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
 # ajustamos los datos de entrada para nuestro modelo
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
@@ -36,9 +44,23 @@ def clean_data(data):
     # quitar columnas no necesarias (id, nombre de la pista, fecha)
     data_ok = np.delete(data_ok,
                 [header['instance_id'],
-                 header['track_name'],
                  header['artist_name'],
-                 header['obtained_date']], 1)
+                 header['track_name'],
+                 header['obtained_date'],
+                 #header['popularity'],
+                 #header['acousticness'],
+                 #header['danceability'],
+                 header['duration_ms'],
+                 #header['instrumentalness'],
+                 #header['key'],
+                 #header['loudness'],
+                 #header['energy'],
+                 #header['liveness'],
+                 #header['mode'],
+                 #header['speechiness'],
+                 header['tempo'],
+                 #header['valence']
+                 ], 1)
 
 
     # rehacemos el diccionario sin las columnas que hemos quitado
@@ -46,7 +68,21 @@ def clean_data(data):
                 [header['instance_id'],
                  header['artist_name'],
                  header['track_name'],
-                 header['obtained_date']], 0)
+                 header['obtained_date'],
+                 #header['popularity'],
+                 #header['acousticness'],
+                 #header['danceability'],
+                 header['duration_ms'],
+                 #header['instrumentalness'],
+                 #header['key'],
+                 #header['loudness'],
+                 #header['energy'],
+                 #header['liveness'],
+                 #header['mode'],
+                 #header['speechiness'],
+                 header['tempo'],
+                 #header['valence']]
+                 ], 0)
 
     header = dict(enumerate(dataHeader.flatten(),0))
     header = dict((value,key) for key, value in header.items())
@@ -79,41 +115,48 @@ def main():
     data = read_csv("music_genre.csv")
   
     data_ok,headerDict = clean_data(data)
-
+    data_ok = data_ok.astype(float)
     # comprobamos cuantos generos hay y cuantas canciones de cada genero
     genres = np.unique(data_ok[:, headerDict['music_genre']])
 
     # creamos las conjuntos de casos vacios
-    Xtrain = np.empty((0, data_ok.shape[1]))
-    Ytrain = np.empty((0,1))
-    Xval = np.empty((0, data_ok.shape[1]))
-    Yval = np.empty((0,1))
-    Xtest = np.empty((0, data_ok.shape[1]))
-    Ytest = np.empty((0,1))
+    Xtrain = np.empty((0, data_ok.shape[1] - 1))
+    Ytrain = np.empty(0)
+    Xval = np.empty((0, data_ok.shape[1] - 1 ))
+    Yval = np.empty(0)
+    Xtest = np.empty((0, data_ok.shape[1] - 1))
+    Ytest = np.empty(0)
 
 
-    numTrain = 300
-    numVal = 100
-    numTest = 50
-    
+    #numTrain = 300
+    #numVal = 100
+    #numTest = 50
+    numTrain = 2940
+    numVal = 840
+    numTest = 420
+
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):
         songs = index_songs_of_genre(data_ok[:,-1], genres[i])
         ini = 0
         end = numTrain
 
-        Xtrain = np.append(Xtrain, data_ok[songs[ini:end]], axis=0)
-        Ytrain = np.append(Ytrain, np.full(numTrain, genres[i]))
+        aux = data_ok[songs[ini:end]]
+        aux2 = aux[:,-1]
+        Xtrain = np.append(Xtrain, aux[:,:-1], axis=0)
+        Ytrain = np.append(Ytrain, aux2, axis=0)
         ini = end
         end += numVal
 
-        Xval =  np.append(Xval, data_ok[songs[ini:end]], axis=0)
-        Yval =  np.append(Yval, np.full(numVal, genres[i]))
+        aux = data_ok[songs[ini:end]]
+        Xval =  np.append(Xval, aux[:,:-1], axis=0)
+        Yval =  np.append(Yval, aux[:, -1], axis=0)
         ini = end
         end += numTest
 
-        Xtest =  np.append(Xtest, data_ok[songs[ini:end]], axis=0)
-        Ytest =  np.append(Ytest, np.full(numTest, genres[i]))
+        aux = data_ok[songs[ini:end]]
+        Xtest =  np.append(Xtest, aux[:,:-1], axis=0)
+        Ytest =  np.append(Ytest, aux[:, -1], axis=0)
 
     print("Training X cases: {0}".format(Xtrain.shape))
     print("Training Y cases: {0}".format(Ytrain.shape))
@@ -131,10 +174,24 @@ def main():
         yval_onehot[i][Yval[i].astype(int)] = 1
 
     # Decidimos hyperparametros
-    reg = np.array([0.01, 0.05, 0.1, 0.5, 1, 3, 5, 10, 25, 50, 100])
-    RN_HyperparameterTuning(25, Xtrain.astype(float), ytrain_onehot, Xval.astype(float), yval_onehot, reg, 50)
+    reg = np.array([0, 1, 10, 25])
+    #flout = Xtrain.astype(float)
+    # RN_HyperparameterTuning(25, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, 70)
+    LR_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, reg)
     # Validacion
 
     # Test
+
+    # model1 = 'Logistic Regression'
+    # lr = LogisticRegression(solver='liblinear')
+    # model = lr.fit(Xtrain, Ytrain)
+    # ypred = lr.predict(Xtest)
+    # lr_cm = confusion_matrix(Ytest, ypred)
+    # lr_acc = accuracy_score(Ytest, ypred)
+    # print('Confusion Matrix')
+    # print(lr_cm)
+    # print('\n')
+    # print(f'Accuracy of {model1} : {lr_acc *100} \n')
+    # print(classification_report(Ytest, ypred))
 
 main()
