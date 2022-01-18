@@ -8,12 +8,14 @@ import sklearn.svm as s_svm
 from pandas.io.parsers import read_csv
 from SVM import SVM_HyperparameterTuning
 from RegresionLogistica import LR_HyperparameterTuning
-from RedNeuronal import RN_HyperparameterTuning
+from RedNeuronal import NN_HyperparameterTuning
 #----
 from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.metrics import roc_curve, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+import sklearn.svm as s_svm
+from sklearn.metrics import accuracy_score
 # ajustamos los datos de entrada para nuestro modelo
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
@@ -128,12 +130,12 @@ def main():
     Ytest = np.empty(0)
 
 
-    #numTrain = 300
-    #numVal = 100
-    #numTest = 50
-    numTrain = 2940
-    numVal = 840
-    numTest = 420
+    numTrain = 300
+    numVal = 100
+    numTest = 50
+    #numTrain = 2940
+    #numVal = 840
+    #numTest = 420
 
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):
@@ -176,22 +178,24 @@ def main():
     # Decidimos hyperparametros
     reg = np.array([0, 1, 10, 25])
     #flout = Xtrain.astype(float)
-    # RN_HyperparameterTuning(25, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, 70)
-    LR_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, reg)
+    NN_HyperparameterTuning(25, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, 70)
+    # LR_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, reg)
+    # SVM_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval)
+    # Test
+
     # Validacion
 
     # Test
-
-    # model1 = 'Logistic Regression'
-    # lr = LogisticRegression(solver='liblinear')
-    # model = lr.fit(Xtrain, Ytrain)
-    # ypred = lr.predict(Xtest)
-    # lr_cm = confusion_matrix(Ytest, ypred)
-    # lr_acc = accuracy_score(Ytest, ypred)
-    # print('Confusion Matrix')
-    # print(lr_cm)
-    # print('\n')
-    # print(f'Accuracy of {model1} : {lr_acc *100} \n')
-    # print(classification_report(Ytest, ypred))
+    #model6 = 'Support Vector Classifier'
+    #svc = s_svm.SVC(kernel = 'linear', C = 2)
+    #svc.fit(Xtrain, Ytrain)
+    #ypred = svc.predict(Xtest)
+    #svc_cm = confusion_matrix(Ytest, ypred)
+    #svc_acc = accuracy_score(Ytest, ypred)
+    #print('Confusion Matrix')
+    #print(svc_cm)
+    #print('\n')
+    #print(f'Accuracy of {model6} : {svc_acc * 100} \n')
+    #print(classification_report(Ytest, ypred))
 
 main()

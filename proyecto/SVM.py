@@ -11,7 +11,7 @@ def SVM_HyperparameterTuning(X, y, Xval, yval):
     for i in range(n_iter):
         sigma = 0.01
         for j in range(n_iter):
-            svm = s_svm.SVC(C=C, kernel='rbf', gamma= (1 / (2*sigma**2)))
+            svm = s_svm.SVC(C=C, kernel='linear', gamma= (1 / (2*sigma**2)))
             svm.fit(X, y)
             scores[i][j] = accuracy_score(yval, svm.predict(Xval))
             sigma *= 3

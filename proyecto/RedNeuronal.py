@@ -110,7 +110,7 @@ def evaluacion(X,y, params, num_entradas, num_ocultas, num_etiquetas):
     return Num/np.shape(y)[0]
 
 
-def RN_HyperparameterTuning(num_ocultas, X, Y, Xval, Yval, reg, numIter):
+def NN_HyperparameterTuning(num_ocultas, X, Y, Xval, Yval, reg, numIter):
     scores = np.zeros(reg.size)
 
     num_entradas = np.shape(X)[1]
