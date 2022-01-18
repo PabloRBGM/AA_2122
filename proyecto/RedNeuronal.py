@@ -1,108 +1,133 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from numpy.lib.index_tricks import AxisConcatenator
-import sklearn.svm as s_svm
-from pandas.io.parsers import read_csv
+import scipy.optimize as opt
+import math
+from scipy.io import loadmat
 
-# ajustamos los datos de entrada para nuestro modelo
-def clean_data(data):
-    # utilizamos el header para hacer un diccionario con cada 
-    dataHeader = data.columns.values
+def sigmoide(z):
+    return 1/(1+ math.e**(-z))
 
-    header = dict(enumerate(dataHeader.flatten(),0))
-    header = dict((value,key) for key, value in header.items())
+def coste(theta1,theta2, X, Y ):
+    a_1,a_2,H = forward_propagate(X, theta1, theta2)
+    m = np.shape(X)[0]
+    coste = (- 1 / (m)) * np.sum(Y * np.log(H) + (1 - Y) * np.log(1 - H + 1e-9))
+    
+    return coste
 
-    # quitamos las filas nulas
-    data = data.dropna()
+def coste_reg(theta1, theta2, X, Y, _lambda):
+    
+    a_1, a_2, H = forward_propagate(X, theta1, theta2)
+    theta1 = theta1[:,1:]
+    theta2 = theta2[:,1:]
+    m = np.shape(X)[0]
+    coste = (- 1 / (m)) * np.sum(Y * np.log(H) + (1 - Y) * np.log(1 - H + 1e-9))
+    
+    regularizacion = (_lambda /(2*m)) * (np.sum(np.power(theta1,2)) + np.sum(np.power(theta2,2)))
+    coste += regularizacion
+    
+    return coste
 
-    # quitamos duplicados si los hay
-    data.duplicated().any()
-    duplicatedCol = data[data.duplicated()].T.columns
-    data.drop(duplicatedCol, inplace=True)    
+#  Calcula el gradiente (regularizado)
+def gradiente(Theta, X, Y, _lambda):
+    H = sigmoide(np.matmul(X, Theta))
+    m = np.shape(X)[0]
+    return (1/m) * np.matmul(np.transpose(X), H - Y) + ((_lambda / m ) * Theta)
 
-    # convertimos los datos a matriz de numpy
-    data_ok = data.to_numpy()
+# Propagación
+def forward_propagate(X, theta1, theta2):
+    m = np.shape(X)[0]
+    a_1 = np.hstack([np.ones([m, 1]), X]) 
+    z_2 = np.matmul(a_1, np.transpose(theta1)) 
+    a_2=sigmoide(z_2)
+    a_2 = np.hstack([np.ones([m, 1]), a_2]) 
+    z_3 = np.matmul(a_2, np.transpose(theta2)) 
+    h=sigmoide(z_3)
+    return a_1, a_2, h
 
-    # la columna 1 'artist_name' tiene valores vacios y los eliminamos
-    data_ok = np.delete(data_ok, np.where(data_ok[:,header['artist_name']] == "empty_field")[0], 0)
-    # la columna 14 'tempo' tiene valores erroneos y no podemos
-    # hacer una aproximacion del valor que podria tener, eliminamos esos casos
-    data_ok = np.delete(data_ok, np.where(data_ok[:,header['tempo']] == "?")[0], 0)
-    # esta columna tiene valores string que tenemos que convertir a float
-    data_ok[:,header['tempo']] = data_ok[:,header['tempo']].astype("float")
+def backprop(params_rn, num_entradas, num_ocultas, num_etiquetas, X, Y, reg):
+    # Roll de las matrices de teta
+    Theta1 = np.reshape(params_rn[:num_ocultas * (num_entradas +1)], (num_ocultas, (num_entradas+1)))
+    Theta2 = np.reshape(params_rn[num_ocultas * (num_entradas +1):], (num_etiquetas, (num_ocultas+1)))
+    
+    # Calculo del gradiente
+    A1, A2, H=forward_propagate(X,Theta1, Theta2)
+    m=np.shape(X)[0]
 
-    # quitar columnas no necesarias (id, nombre de la pista, fecha)
-    data_ok = np.delete(data_ok,
-                [header['instance_id'],
-                 header['track_name'],
-                 header['obtained_date']], 1)
+    Delta1 = np.zeros(np.shape(Theta1))
+    Delta2 = np.zeros(np.shape(Theta2))
+    for t in range(m):
+        a1t = A1[t,:] #(401,)
+        a2t = A2[t,:] #(26,)
+        ht = H[t,:] #(10,)
+        yt = Y[t] #(10,)
+
+        d3t = ht - yt #(10,)
+        d2t = np.dot(np.transpose(Theta2),d3t)*(a2t*(1-a2t)) #26
+
+        Delta1 = Delta1 + np.dot(d2t[1:,np.newaxis],a1t[np.newaxis,:])
+        Delta2 = Delta2 + np.dot(d3t[:,np.newaxis],a2t[np.newaxis,:])
+        
+    
+    Theta1ceros = Theta1[:,1:]
+    Theta1ceros = np.hstack([np.zeros([np.shape(Theta1)[0], 1]), Theta1ceros]) 
+    D1 = (1/m) * (Delta1 + reg * Theta1ceros)
+    
+    Theta2ceros = Theta2[:,1:]
+    Theta2ceros = np.hstack([np.zeros([np.shape(Theta2)[0], 1]), Theta2ceros]) 
+    D2 = (1/m) * (Delta2 + reg * Theta2ceros)
+
+    # Unroll del gradiente
+    gradientVec = np.concatenate((np.ravel(D1),np.ravel(D2)))
+    
+    jVal = coste_reg(Theta1, Theta2, X, Y, reg)
+    return (jVal, gradientVec)
+
+def training(params, num_entradas, num_ocultas, num_etiquetas, X, Y, reg, nIter):
+    
+    res = opt.minimize(
+        fun=backprop, 
+        x0=params, 
+        args=( num_entradas, num_ocultas, num_etiquetas, X, Y, reg), 
+        method='TNC',
+        jac=True,
+        options={'maxiter': nIter})
+   
+    
+    return res
+
+# Calcula el porcentaje de éxito de nuestro modelo multi-clase
+# params son los pesos de la red neuronal entrenados
+def evaluacion(X,y, params, num_entradas, num_ocultas, num_etiquetas):
+
+    Theta1 = np.reshape(params[:num_ocultas * (num_entradas +1)], (num_ocultas, (num_entradas+1)))
+    Theta2 = np.reshape(params[num_ocultas * (num_entradas +1):], (num_etiquetas, (num_ocultas+1)))
+
+    A1, A2, H=forward_propagate(X,Theta1, Theta2)
+    MaxIndex=np.zeros(np.shape(H)[0])
+    for i in range(np.shape(H)[0]):
+        MaxIndex[i]=np.argmax(H[i])
+        
+    Num= np.sum(np.ravel(y) == MaxIndex)
+    return Num/np.shape(y)[0]
 
 
-    # rehacemos el diccionario sin las columnas que hemos quitado
-    dataHeader = np.delete(dataHeader,
-                [header['instance_id'],
-                 header['track_name'],
-                 header['obtained_date']], 0)
+def RN_HyperparameterTuning(num_ocultas, X, Y, Xval, Yval, reg, numIter):
+    scores = np.zeros(reg.size)
 
-    header = dict(enumerate(dataHeader.flatten(),0))
-    header = dict((value,key) for key, value in header.items())
+    num_entradas = np.shape(X)[1]
+    num_etiquetas = np.shape(Y)[1]
 
-    # pasamos los strings a numeros
-    data_ok[:, header['artist_name']] = np.unique(data_ok[:, header['artist_name']], return_inverse=True)[1]
-    data_ok[:, header['key']] = np.unique(data_ok[:, header['key']], return_inverse=True)[1]
-    data_ok[:, header['mode']] = np.unique(data_ok[:, header['mode']], return_inverse=True)[1]
-    data_ok[:, header['music_genre']] = np.unique(data_ok[:, header['music_genre']], return_inverse=True)[1]
+    _low = -0.12
+    _high = -_low
 
-    return data_ok, header
+    Theta1 = np.random.uniform(low=_low, high=_high, size=(num_ocultas, num_entradas + 1) )
+    Theta2 = np.random.uniform(low=_low, high=_high, size=(num_etiquetas, num_ocultas + 1) )
+    params = np.concatenate((np.ravel(Theta1), np.ravel(Theta2)))
 
-# devuelve los indices del genero
-def index_songs_of_genre(Y, genre):
-    return np.where(Y == genre)[0]
-
-def main():
-    data = read_csv("music_genre.csv")
-  
-    data_ok,headerDict = clean_data(data)
-
-    # comprobamos cuantos generos hay y cuantas canciones de cada genero
-    genres = np.unique(data_ok[:, headerDict['music_genre']])
-
-    # creamos las conjuntos de casos vacios
-    Xtrain = np.empty((0, data_ok.shape[1]))
-    Ytrain = np.empty((0,1))
-    Xval = np.empty((0, data_ok.shape[1]))
-    Yval = np.empty((0,1))
-    Xtest = np.empty((0, data_ok.shape[1]))
-    Ytest = np.empty((0,1))
-
-    numTrain = 300
-    numVal = 100
-    numTest = 50
-
-    # construimos los conjuntos de entrenamiento, validacion y test
-    for i in range(len(genres)):
-        songs = index_songs_of_genre(data_ok, genres[i])
-        ini = 0
-        end = numTrain
-
-        Xtrain = np.append(Xtrain, data_ok[songs[ini:end]], axis=0)
-        Ytrain = np.append(Ytrain, np.full(numTrain, genres[i]))
-        ini = end
-        end += numVal
-
-        Xval =  np.append(Xval, data_ok[songs[ini:end]], axis=0)
-        Yval =  np.append(Yval, np.full(numVal, genres[i]))
-        ini = end
-        end += numTest
-
-        Xtest =  np.append(Xtest, data_ok[songs[ini:end]], axis=0)
-        Ytest =  np.append(Ytest, np.full(numTest, genres[i]))
-
-    print("Training X cases: {0}".format(Xtrain.shape))
-    print("Training Y cases: {0}".format(Ytrain.shape))
-    print("Validation X cases: {0}".format(Xval.shape))
-    print("Validation Y cases: {0}".format(Yval.shape))
-    print("Test X cases: {0}".format(Xtest.shape))
-    print("Test Y cases: {0}".format(Ytest.shape))
-
-main()
+    for i in range(reg.size):
+        res = training(params, num_entradas, num_ocultas, num_etiquetas, X, Y, reg[i], numIter)
+        scores[i] = evaluacion(Xval, Yval, res.x, num_entradas, num_ocultas, num_etiquetas)
+        print("Reg:{0}: {1}".format(reg[i], scores[i]))
+    
+    print(scores)
+    best = np.max(scores)
+    print("maxAcc: ", best)

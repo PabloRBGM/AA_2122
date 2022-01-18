@@ -4,6 +4,8 @@ from numpy.lib.index_tricks import AxisConcatenator
 import sklearn.svm as s_svm
 from pandas.io.parsers import read_csv
 from SVM import SVM_HyperparameterTuning
+from RegresionLogistica import LR_HyperparameterTuning
+from RedNeuronal import RN_HyperparameterTuning
 # ajustamos los datos de entrada para nuestro modelo
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
@@ -35,12 +37,14 @@ def clean_data(data):
     data_ok = np.delete(data_ok,
                 [header['instance_id'],
                  header['track_name'],
+                 header['artist_name'],
                  header['obtained_date']], 1)
 
 
     # rehacemos el diccionario sin las columnas que hemos quitado
     dataHeader = np.delete(dataHeader,
                 [header['instance_id'],
+                 header['artist_name'],
                  header['track_name'],
                  header['obtained_date']], 0)
 
@@ -48,7 +52,7 @@ def clean_data(data):
     header = dict((value,key) for key, value in header.items())
 
     # pasamos los strings a numeros
-    data_ok[:, header['artist_name']] = np.unique(data_ok[:, header['artist_name']], return_inverse=True)[1]
+    #data_ok[:, header['artist_name']] = np.unique(data_ok[:, header['artist_name']], return_inverse=True)[1]
     data_ok[:, header['key']] = np.unique(data_ok[:, header['key']], return_inverse=True)[1]
     data_ok[:, header['mode']] = np.unique(data_ok[:, header['mode']], return_inverse=True)[1]
     data_ok[:, header['music_genre']] = np.unique(data_ok[:, header['music_genre']], return_inverse=True)[1]
@@ -87,13 +91,14 @@ def main():
     Xtest = np.empty((0, data_ok.shape[1]))
     Ytest = np.empty((0,1))
 
+
     numTrain = 300
     numVal = 100
     numTest = 50
-
+    
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):
-        songs = index_songs_of_genre(data_ok, genres[i])
+        songs = index_songs_of_genre(data_ok[:,-1], genres[i])
         ini = 0
         end = numTrain
 
@@ -116,5 +121,20 @@ def main():
     print("Validation Y cases: {0}".format(Yval.shape))
     print("Test X cases: {0}".format(Xtest.shape))
     print("Test Y cases: {0}".format(Ytest.shape))    
+
+    ytrain_onehot = np.zeros((np.shape(Ytrain)[0], len(genres)))
+    for i in range(np.shape(Ytrain)[0]):
+        ytrain_onehot[i][Ytrain[i].astype(int)] = 1
+
+    yval_onehot = np.zeros((np.shape(Yval)[0], len(genres)))
+    for i in range(np.shape(Yval)[0]):
+        yval_onehot[i][Yval[i].astype(int)] = 1
+
+    # Decidimos hyperparametros
+    reg = np.array([0.01, 0.05, 0.1, 0.5, 1, 3, 5, 10, 25, 50, 100])
+    RN_HyperparameterTuning(25, Xtrain.astype(float), ytrain_onehot, Xval.astype(float), yval_onehot, reg, 50)
+    # Validacion
+
+    # Test
 
 main()
