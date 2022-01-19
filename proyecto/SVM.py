@@ -1,5 +1,4 @@
 import numpy as np
-import codecs
 import sklearn.svm as s_svm
 from sklearn.metrics import accuracy_score
 

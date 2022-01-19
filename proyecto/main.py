@@ -1,21 +1,14 @@
 import numpy as np
-# warning is not logged here. Perfect for clean unit test output
-# with np.errstate(divide='ignore'):
-#     np.float64(1.0) / 0.0
-import matplotlib.pyplot as plt
-from numpy.lib.index_tricks import AxisConcatenator
-import sklearn.svm as s_svm
 from pandas.io.parsers import read_csv
 from SVM import SVM_HyperparameterTuning, SVM_Evaluate
 from RegresionLogistica import LR_HyperparameterTuning, LR_Evaluate
-from RedNeuronal import NN_HyperparameterTuning
-#----
-from sklearn.metrics import confusion_matrix, accuracy_score
-from sklearn.metrics import roc_curve, classification_report
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-import sklearn.svm as s_svm
-from sklearn.metrics import accuracy_score
+from RedNeuronal import NN_HyperparameterTuning, SKLearn_NN_HyperparameterTuning, NN_Evaluate, SKLearn_NN_Evaluate
+from sklearn.preprocessing import StandardScaler
+
+def normalize_data(data):
+    scaler = StandardScaler()
+    normalizedData = scaler.fit_transform(data)
+    return normalizedData
 # ajustamos los datos de entrada para nuestro modelo
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
@@ -41,7 +34,9 @@ def clean_data(data):
     # hacer una aproximacion del valor que podria tener, eliminamos esos casos
     data_ok = np.delete(data_ok, np.where(data_ok[:,header['tempo']] == "?")[0], 0)
     # esta columna tiene valores string que tenemos que convertir a float
-    data_ok[:,header['tempo']] = data_ok[:,header['tempo']].astype("float")
+    data_ok[:,header['tempo']] = data_ok[:,header['tempo']].astype("float") # TODO: luego convertimos todo a float
+    # la columan de 'duration_ms' tiene valores de -1, quitamos esos casos
+    # data_ok = np.delete(data_ok, np.where(data_ok[:,header['duration_ms']] == -1.0)[0], 0)
 
     # quitar columnas no necesarias (id, nombre de la pista, fecha)
     data_ok = np.delete(data_ok,
@@ -118,6 +113,7 @@ def main():
   
     data_ok,headerDict = clean_data(data)
     data_ok = data_ok.astype(float)
+    data_normalized = normalize_data(data_ok)
     # comprobamos cuantos generos hay y cuantas canciones de cada genero
     genres = np.unique(data_ok[:, headerDict['music_genre']])
 
@@ -167,25 +163,13 @@ def main():
     print("Test X cases: {0}".format(Xtest.shape))
     print("Test Y cases: {0}".format(Ytest.shape))    
 
-    ytrain_onehot = np.zeros((np.shape(Ytrain)[0], len(genres)))
-    for i in range(np.shape(Ytrain)[0]):
-        ytrain_onehot[i][Ytrain[i].astype(int)] = 1
-
-    yval_onehot = np.zeros((np.shape(Yval)[0], len(genres)))
-    for i in range(np.shape(Yval)[0]):
-        yval_onehot[i][Yval[i].astype(int)] = 1
-
-    # Decidimos hyperparametros
-    reg = np.array([0, 1, 10, 25])
-    #flout = Xtrain.astype(float)
-    # NN_HyperparameterTuning(25, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, 70)
-    # LR_Study(len(genres), Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
+    # Clasificacion con Regresion logistica
+    LR_Study(len(genres), Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
+    # Clasificacion con SVC
     SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
-    # Test
+    # Clasificacion con Red Neuronal
+    NN_Study(len(genres), 100, 200, Xtrain, Ytrain, Xval, Yval, Xtest, Ytest, True)
 
-    # Validacion
-
-    # Test
 
 def LR_Study( num_etiquetas, Xtrain, Ytrain, Xval, Yval, Xtest, Ytest):
     reg = np.array([0, 0.1, 0.5, 1, 5, 10, 25, 100, 250])
@@ -203,5 +187,27 @@ def SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest):
     print("MaxAcc: {0}, C: {1}, Sigma: {2}".format(acc, bestC, bestSigma))
     # Probamos el modelo con los casos de prueba para medir el exito
     print("Exito SVC: {0}".format(SVM_Evaluate(Xtrain, Ytrain, Xtest, Ytest, bestC, bestSigma)))
+
+def onehot(Y, n_classes):
+    onehot = np.zeros((np.shape(Y)[0], n_classes))
+    for i in range(np.shape(Y)[0]):
+        onehot[i][Y[i].astype(int)] = 1
+    return onehot
+
+def NN_Study(n_classes, num_ocultas, num_iter, Xtrain, Ytrain, Xval, Yval, Xtest, Ytest, use_sklearn):
+    reg = np.array([0.1, 0.5, 1, 5, 10, 25, 100, 250])
+
+    ytrain_onehot = onehot(Ytrain, n_classes)
+    yval_onehot = onehot(Yval, n_classes)
+    ytest_onehot = onehot(Ytest, n_classes)
+
+    if(use_sklearn):
+        acc, bestReg = SKLearn_NN_HyperparameterTuning(num_ocultas, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, num_iter)
+        print("MaxAcc: {0}, Reg: {1}".format(acc, bestReg))
+        print("Exito Red Neuronal: {0}".format(NN_Evaluate(num_ocultas, Xtrain, ytrain_onehot, Xtest, ytest_onehot, reg, num_iter)))
+    else:
+        acc, bestReg = NN_HyperparameterTuning(num_ocultas, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, num_iter)
+        print("MaxAcc: {0}, Reg: {1}".format(acc, bestReg))
+        print("Exito Red Neuronal: {0}".format(SKLearn_NN_Evaluate(num_ocultas, Xtrain, ytrain_onehot, Xtest, ytest_onehot, reg, num_iter)))
 
 main()

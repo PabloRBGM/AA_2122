@@ -1,9 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import scipy.optimize as opt
 import math
-import sklearn.preprocessing as sp
-from sklearn.metrics import accuracy_score
 
 def sigmoide(z):
     return 1/(1+math.e**(-z))
@@ -48,7 +45,6 @@ def oneVsAll(X, y, num_etiquetas, reg):
     X1s = np.hstack([np.ones([m, 1]), X])
     Theta = np.zeros(np.shape(X1s)[1])
     for i in range(num_etiquetas):
-        #el genero que queremos buscar de 0 a 9
         y_i = (y==i)
         y_i = np.ravel(y_i)
         print(np.shape(y_i))
@@ -61,7 +57,6 @@ def LR_HyperparameterTuning(num_etiquetas, X, Y, Xval, Yval, reg ):
     scores = np.zeros(reg.size)
     m = np.shape(Xval)[0]
     Xval1s = np.hstack([np.ones([m, 1]), Xval])
-    maxScore = 0
     for i in range(reg.size):
         scores[i] = evaluacion(Xval1s, Yval, oneVsAll(X, Y, num_etiquetas, reg[i]))
         print("Reg:{0}: {1}".format(reg[i], scores[i]))
