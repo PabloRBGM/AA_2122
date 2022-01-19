@@ -162,7 +162,7 @@ def SKLearn_NN_HyperparameterTuning(num_ocultas, X, Y, Xval, Yval, reg, numIter)
     return best, reg[np.where(scores == best)]
 
 def SKLearn_NN_Evaluate(num_ocultas, X, Y, Xtest, Ytest, reg, numIter):
-    nn = s_nn.MLPClassifier(hidden_layer_sizes=num_ocultas, max_iter=numIter, solver='lbfgs', alpha=reg)
+    nn = s_nn.MLPClassifier(hidden_layer_sizes=num_ocultas, max_iter=numIter, solver='sgd', alpha=reg)
     model = nn.fit(X, Y)
     ypred = nn.predict(Xtest)
     

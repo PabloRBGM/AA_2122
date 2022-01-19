@@ -1,14 +1,19 @@
+import random as rnd
 import numpy as np
 from pandas.io.parsers import read_csv
-from SVM import SVM_HyperparameterTuning, SVM_Evaluate
+from SVM import SVMLinear_HyperparameterTuning, SVMLinear_Evaluate, SVM_HyperparameterTuning, SVM_Evaluate
 from RegresionLogistica import LR_HyperparameterTuning, LR_Evaluate
 from RedNeuronal import NN_HyperparameterTuning, SKLearn_NN_HyperparameterTuning, NN_Evaluate, SKLearn_NN_Evaluate
-from sklearn.preprocessing import StandardScaler
 
-def normalize_data(data):
-    scaler = StandardScaler()
-    normalizedData = scaler.fit_transform(data)
-    return normalizedData
+def normalizar(X):
+    xMean = np.mean(X, 0)
+    xStd = np.std(X, 0)
+    res = (X - xMean) / xStd
+    return res, xMean, xStd
+
+def normalizar_m_std(X, m, std):
+    return (X - m) / std
+
 # ajustamos los datos de entrada para nuestro modelo
 def clean_data(data):
     # utilizamos el header para hacer un diccionario con cada 
@@ -96,24 +101,11 @@ def clean_data(data):
 def index_songs_of_genre(Y, genre):
     return np.where(Y == genre)[0]
 
-
-# Calcula el porcentaje de éxito de nuestro modelo multi-clase
-def evaluacion(y, classification):
-    MaxIndex=np.zeros(np.shape(classification)[0])
-
-    for i in range(np.shape(classification)[0]):
-        MaxIndex[i]=np.argmax(classification[i]) 
-        
-    Num= np.sum(np.ravel(y) == MaxIndex)
-    Porcentaje=Num/np.shape(y)[0] * 100
-    print("Succes: {0}%".format(Porcentaje))
-
 def main():
     data = read_csv("music_genre.csv")
   
     data_ok,headerDict = clean_data(data)
     data_ok = data_ok.astype(float)
-    data_normalized = normalize_data(data_ok)
     # comprobamos cuantos generos hay y cuantas canciones de cada genero
     genres = np.unique(data_ok[:, headerDict['music_genre']])
 
@@ -126,12 +118,12 @@ def main():
     Ytest = np.empty(0)
 
 
-    #numTrain = 300
-    #numVal = 100
-    #numTest = 50
-    numTrain = 2940
-    numVal = 840
-    numTest = 420
+    numTrain = 300
+    numVal = 100
+    numTest = 50
+    # numTrain = 2940
+    # numVal = 840
+    # numTest = 420
 
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):
@@ -156,6 +148,9 @@ def main():
         Xtest =  np.append(Xtest, aux[:,:-1], axis=0)
         Ytest =  np.append(Ytest, aux[:, -1], axis=0)
 
+    Xtrain, Xmean, Xstd = normalizar(Xtrain)
+    Xval = normalizar_m_std(Xval, Xmean, Xstd)
+    Xtest = normalizar_m_std(Xtest, Xmean, Xstd)
     print("Training X cases: {0}".format(Xtrain.shape))
     print("Training Y cases: {0}".format(Ytrain.shape))
     print("Validation X cases: {0}".format(Xval.shape))
@@ -166,7 +161,7 @@ def main():
     # Clasificacion con Regresion logistica
     LR_Study(len(genres), Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
     # Clasificacion con SVC
-    SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
+    SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest, True)
     # Clasificacion con Red Neuronal
     NN_Study(len(genres), 100, 200, Xtrain, Ytrain, Xval, Yval, Xtest, Ytest, True)
 
@@ -175,18 +170,34 @@ def LR_Study( num_etiquetas, Xtrain, Ytrain, Xval, Yval, Xtest, Ytest):
     reg = np.array([0, 0.1, 0.5, 1, 5, 10, 25, 100, 250])
     # Elegimos el valor de regularizacion mas apto
     acc, bestReg = LR_HyperparameterTuning(num_etiquetas, Xtrain, Ytrain, Xval, Yval, reg)
+    # Si hay varios valores de regularizacion igual de buenos, se escoge uno aleatorio
+    if len(bestReg) > 1:
+        bestReg = bestReg[rnd.randint(0, len(bestReg) - 1)]
     print("MaxAcc: {0}, Reg: {1}".format(acc, bestReg))
     # Probamos el modelo con los casos de prueba para medir el exito
     print("Exito Regresion Logistica: {0}".format(LR_Evaluate(num_etiquetas, Xtrain, Ytrain, Xtest, Ytest, bestReg)))
 
-def SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest):
+def SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest, linearKernel):
     Cs = np.array([0.01, 0.03, 0.09, 0.27, 0.81, 2.43, 7.29, 21.87, 65.61])
-    sigmas = np.array([0.01, 0.03, 0.09, 0.27, 0.81, 2.43, 7.29, 21.87, 65.61])
-    # Elegimos el valor de regularizacion mas apto
-    acc, bestC, bestSigma =  SVM_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, Cs, sigmas)
-    print("MaxAcc: {0}, C: {1}, Sigma: {2}".format(acc, bestC, bestSigma))
-    # Probamos el modelo con los casos de prueba para medir el exito
-    print("Exito SVC: {0}".format(SVM_Evaluate(Xtrain, Ytrain, Xtest, Ytest, bestC, bestSigma)))
+    if linearKernel:
+        # Elegimos el valor de regularizacion mas apto
+        acc, bestC =  SVMLinear_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, Cs)
+        # Si hay varios valores de regularizacion igual de buenos, se escoge uno aleatorio
+        if len(bestC) > 1:
+            bestC = bestC[rnd.randint(0, len(bestC) - 1)]
+        print("MaxAcc: {0}, C: {1}".format(acc, bestC))
+        # Probamos el modelo con los casos de prueba para medir el exito
+        print("Exito SVC: {0}".format(SVMLinear_Evaluate(Xtrain, Ytrain, Xtest, Ytest, bestC)))
+    else:
+        sigmas = np.array([0.01, 0.03, 0.09, 0.27, 0.81, 2.43, 7.29, 21.87, 65.61])
+        # Elegimos el valor de regularizacion mas apto
+        acc, bestC, bestSigma =  SVM_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, Cs, sigmas)
+        # Si hay varios valores de regularizacion igual de buenos, se escoge uno aleatorio
+        if len(bestC) > 1:
+            bestC = bestC[rnd.randint(0, len(bestC) - 1)]
+        print("MaxAcc: {0}, C: {1}, Sigma: {2}".format(acc, bestC, bestSigma))
+        # Probamos el modelo con los casos de prueba para medir el exito
+        print("Exito SVC: {0}".format(SVM_Evaluate(Xtrain, Ytrain, Xtest, Ytest, bestC, bestSigma)))
 
 def onehot(Y, n_classes):
     onehot = np.zeros((np.shape(Y)[0], n_classes))
@@ -201,13 +212,17 @@ def NN_Study(n_classes, num_ocultas, num_iter, Xtrain, Ytrain, Xval, Yval, Xtest
     yval_onehot = onehot(Yval, n_classes)
     ytest_onehot = onehot(Ytest, n_classes)
 
-    if(use_sklearn):
+    if use_sklearn:
         acc, bestReg = SKLearn_NN_HyperparameterTuning(num_ocultas, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, num_iter)
+        if len(bestReg) > 1:
+            bestReg = bestReg[rnd.randint(0, len(bestReg) - 1)]
         print("MaxAcc: {0}, Reg: {1}".format(acc, bestReg))
-        print("Exito Red Neuronal: {0}".format(NN_Evaluate(num_ocultas, Xtrain, ytrain_onehot, Xtest, ytest_onehot, reg, num_iter)))
+        print("Exito Red Neuronal: {0}".format(SKLearn_NN_Evaluate(num_ocultas, Xtrain, ytrain_onehot, Xtest, ytest_onehot, bestReg, num_iter)))
     else:
         acc, bestReg = NN_HyperparameterTuning(num_ocultas, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, num_iter)
+        if len(bestReg) > 1:
+            bestReg = bestReg[rnd.randint(0, len(bestReg) - 1)]
         print("MaxAcc: {0}, Reg: {1}".format(acc, bestReg))
-        print("Exito Red Neuronal: {0}".format(SKLearn_NN_Evaluate(num_ocultas, Xtrain, ytrain_onehot, Xtest, ytest_onehot, reg, num_iter)))
+        print("Exito Red Neuronal: {0}".format(NN_Evaluate(num_ocultas, Xtrain, ytrain_onehot, Xtest, ytest_onehot, bestReg, num_iter)))
 
 main()
