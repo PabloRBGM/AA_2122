@@ -57,14 +57,20 @@ def oneVsAll(X, y, num_etiquetas, reg):
     
     return theta_mat    
 
-def LR_HyperparameterTuning( X, Y, Xval, Yval, reg ):
+def LR_HyperparameterTuning(num_etiquetas, X, Y, Xval, Yval, reg ):
     scores = np.zeros(reg.size)
     m = np.shape(Xval)[0]
     Xval1s = np.hstack([np.ones([m, 1]), Xval])
+    maxScore = 0
     for i in range(reg.size):
-        scores[i] = evaluacion(Xval1s, Yval, oneVsAll(X, Y, 10, reg[i]))
+        scores[i] = evaluacion(Xval1s, Yval, oneVsAll(X, Y, num_etiquetas, reg[i]))
         print("Reg:{0}: {1}".format(reg[i], scores[i]))
     
     print(scores)
     best = np.max(scores)
-    print("maxAcc: ", best)
+    return best, reg[np.where(scores == best)]
+
+def LR_Evaluate(num_etiquetas, X, Y, Xtest, Ytest, reg):
+    m = np.shape(Xtest)[0]
+    Xtest1s = np.hstack([np.ones([m, 1]), Xtest])
+    return evaluacion(Xtest1s, Ytest, oneVsAll(X, Y, num_etiquetas, reg))

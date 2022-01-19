@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from numpy.lib.index_tricks import AxisConcatenator
 import sklearn.svm as s_svm
 from pandas.io.parsers import read_csv
-from SVM import SVM_HyperparameterTuning
-from RegresionLogistica import LR_HyperparameterTuning
+from SVM import SVM_HyperparameterTuning, SVM_Evaluate
+from RegresionLogistica import LR_HyperparameterTuning, LR_Evaluate
 from RedNeuronal import NN_HyperparameterTuning
 #----
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -130,12 +130,12 @@ def main():
     Ytest = np.empty(0)
 
 
-    numTrain = 300
-    numVal = 100
-    numTest = 50
-    #numTrain = 2940
-    #numVal = 840
-    #numTest = 420
+    #numTrain = 300
+    #numVal = 100
+    #numTest = 50
+    numTrain = 2940
+    numVal = 840
+    numTest = 420
 
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):
@@ -178,24 +178,30 @@ def main():
     # Decidimos hyperparametros
     reg = np.array([0, 1, 10, 25])
     #flout = Xtrain.astype(float)
-    NN_HyperparameterTuning(25, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, 70)
-    # LR_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, reg)
-    # SVM_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval)
+    # NN_HyperparameterTuning(25, Xtrain, ytrain_onehot, Xval, yval_onehot, reg, 70)
+    # LR_Study(len(genres), Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
+    SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest)
     # Test
 
     # Validacion
 
     # Test
-    #model6 = 'Support Vector Classifier'
-    #svc = s_svm.SVC(kernel = 'linear', C = 2)
-    #svc.fit(Xtrain, Ytrain)
-    #ypred = svc.predict(Xtest)
-    #svc_cm = confusion_matrix(Ytest, ypred)
-    #svc_acc = accuracy_score(Ytest, ypred)
-    #print('Confusion Matrix')
-    #print(svc_cm)
-    #print('\n')
-    #print(f'Accuracy of {model6} : {svc_acc * 100} \n')
-    #print(classification_report(Ytest, ypred))
+
+def LR_Study( num_etiquetas, Xtrain, Ytrain, Xval, Yval, Xtest, Ytest):
+    reg = np.array([0, 0.1, 0.5, 1, 5, 10, 25, 100, 250])
+    # Elegimos el valor de regularizacion mas apto
+    acc, bestReg = LR_HyperparameterTuning(num_etiquetas, Xtrain, Ytrain, Xval, Yval, reg)
+    print("MaxAcc: {0}, Reg: {1}".format(acc, bestReg))
+    # Probamos el modelo con los casos de prueba para medir el exito
+    print("Exito Regresion Logistica: {0}".format(LR_Evaluate(num_etiquetas, Xtrain, Ytrain, Xtest, Ytest, bestReg)))
+
+def SVC_Study(Xtrain, Ytrain, Xval, Yval, Xtest, Ytest):
+    Cs = np.array([0.01, 0.03, 0.09, 0.27, 0.81, 2.43, 7.29, 21.87, 65.61])
+    sigmas = np.array([0.01, 0.03, 0.09, 0.27, 0.81, 2.43, 7.29, 21.87, 65.61])
+    # Elegimos el valor de regularizacion mas apto
+    acc, bestC, bestSigma =  SVM_HyperparameterTuning(Xtrain, Ytrain, Xval, Yval, Cs, sigmas)
+    print("MaxAcc: {0}, C: {1}, Sigma: {2}".format(acc, bestC, bestSigma))
+    # Probamos el modelo con los casos de prueba para medir el exito
+    print("Exito SVC: {0}".format(SVM_Evaluate(Xtrain, Ytrain, Xtest, Ytest, bestC, bestSigma)))
 
 main()
