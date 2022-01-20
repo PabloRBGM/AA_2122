@@ -118,12 +118,16 @@ def main():
     Ytest = np.empty(0)
 
 
-    numTrain = 300
-    numVal = 100
-    numTest = 50
-    # numTrain = 2940
-    # numVal = 840
-    # numTest = 420
+    #numTrain = 300
+    #numVal = 100
+    #numTest = 50
+    numTrain = 2940
+    numVal = 840
+    numTest = 420
+    #numTrain = 2891
+    #numVal = 385
+    #numTest = 192
+
 
     # construimos los conjuntos de entrenamiento, validacion y test
     for i in range(len(genres)):

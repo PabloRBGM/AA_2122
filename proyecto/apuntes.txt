@@ -1,3 +1,18 @@
 Decimal - resto
 String - artist_name, track_name, key, music_genre, mode, tempo
 DateTime - obtained_date
+
+Tamaño dataSet con duration_ms = -1 : 42791
+Tamaño dataSet sin duration_ms = -1 = 38556 
+Casos de entrenamiento
+ - 29400
+ - 28910 
+Casos de validacion
+ - 8400
+ - 3850
+Casos de prueba
+ - 4200
+ - 1920
+
+ -> Probar con data set con duration_ms = -1 Con y Sin normalizar
+ -> Probar con data set sin duration_ms = -1 Con y Sin normalizar
